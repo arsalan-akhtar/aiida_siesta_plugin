@@ -1,5 +1,6 @@
 """
-Very basic workchain to calculate the bandgap as an overlay of a SiestaBandsWorkChain workflow
+Workchain to calculate the band gap with Siesta.
+It is built on top of the SiestaBandsWorkChain
 """
 
 from __future__ import absolute_import
@@ -16,11 +17,16 @@ SiestaBandsWorkChain = WorkflowFactory('siesta.bands')
 def get_bandgap(e_fermi, band):
     """
     Takes a band object, and a Fermi energy, 
-    and extracts the bandgap and is_insulator boolean
+    and extracts the band gap value and 'is_insulator' boolean
 
     :param band: (orm.BandsData): band-structure object
     :param e_energy: (orm.Float): value of the fermi energy.
 
+    :return: An orm.Dict containing the keys:
+             'band_gap':  A float, or None in case of a metal. It is zero when the homo is
+                          equal to the lumo (e.g. in semi-metals).
+             'band_gap_units': A string, here 'eV'
+             'is_insulator': A boolean
     """
     from aiida.orm.nodes.data.array.bands import find_bandgap
 
@@ -28,6 +34,7 @@ def get_bandgap(e_fermi, band):
                                          bandsdata=band)
     output = {}
     output['band_gap'] = bandgap
+    output['band_gap_units'] = 'eV'
     output['is_insulator'] = is_insulator
     return orm.Dict(dict=output)
 
@@ -53,6 +60,19 @@ class SiestaBandGapWorkChain(WorkChain):
         Run the SiestaBandsWorkChain to compute the band structure
         """
 
+        # Further enhancements:
+
+        # We might want to increase the density of the k-point sampling
+        # for bands.
+
+        # Optionally, use seekpath to normalize the structure before
+        # calling the Bands workflow.
+
+        # Decide whether to use spin-polarization in some cases.
+
+        # Set the band_gap to 'None' for an odd number of electrons in
+        # the unit cell if the calculation is not spin-polarized
+
         inputs = AttributeDict(self.exposed_inputs(SiestaBandsWorkChain))
 
         running = self.submit(SiestaBandsWorkChain, **inputs)
@@ -75,6 +95,9 @@ class SiestaBandGapWorkChain(WorkChain):
         self.out_many(
             self.exposed_outputs(self.ctx.workchain_bands,
                                  SiestaBandsWorkChain))
+
         self.out('bandgap_info', bandgap_info)
-        self.report('Calculation completed')
+
+        self.report('BandGap workchain completed')
+
         return
