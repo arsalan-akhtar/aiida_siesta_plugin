@@ -5,12 +5,10 @@ import six
 from aiida.orm import Code
 from aiida.orm import (Int, Str, Bool, Dict, StructureData, KpointsData,
                        BandsData)
-from aiida.engine.launch import submit, run
-from aiida.engine import WorkChain, ToContext, workfunction
-from aiida.common.links import LinkType
+from aiida.engine.launch import run
+from aiida.engine import WorkChain, ToContext
 
 from aiida_siesta.data.psf import get_pseudos_from_structure
-##from aiida_siesta.calculations.siesta import SiestaCalculation
 from aiida_siesta.workflows.base import SiestaBaseWorkChain
 
 
@@ -255,7 +253,7 @@ class SiestaBandsWorkChain(WorkChain):
             distance=self.ctx.protocol['kpoints_mesh_density'],
             offset=self.ctx.protocol['kpoints_mesh_offset'])
 
-        # For the band-structure kath, it is advised to use the
+        # For the band-structure kpath, it is advised to use the
         # 'seekpath' method, but we try the 'legacy' for now.  In some
         # cases we might not want seekpath to change our structure.
         # Further support for this in the input to the workflow might
@@ -267,8 +265,9 @@ class SiestaBandsWorkChain(WorkChain):
 
         legacy_kpath_parameters = Dict(
             dict={
-                'kpoint_distance':
-                0.05  # In units of b1, b2, b3 (Around 20 points per side...)
+                'kpoint_distance': 0.025  # In units of b1, b2, b3
+                # (Around 40 points per BZ side,
+                #  or around 20 points per Gamma to BZ border section)
             })
         seekpath_kpath_parameters = Dict(dict={
             'reference_distance': 0.02,

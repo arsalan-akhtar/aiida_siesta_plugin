@@ -73,6 +73,7 @@ SIESTA Workflows
 
    workflows/base
    workflows/bands
+   workflows/bandgap
    workflows/stm
 ..
    
